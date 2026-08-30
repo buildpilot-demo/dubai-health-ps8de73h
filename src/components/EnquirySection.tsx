@@ -1,6 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useConvex } from "convex/react";
+import { makeFunctionReference } from "convex/server";
 import { siteConfig } from "../site.config";
+import { convexUrl, siteId } from "../lib/convex";
 import { EnquiryForm } from "./EnquiryForm";
+
+// Submission handler on BuildPilot's shared, multi-tenant Convex deployment
+// (see convex/README.md) — referenced by name, since it is defined and
+// deployed outside this repository.
+const submitInquiry = makeFunctionReference<"mutation">("siteSubmissions:submitInquiry");
 
 // Shared across both the cinematic and plain site variants (see
 // src/types/site-config.ts) — enquirySection, businessName, and contact all
@@ -8,6 +16,20 @@ import { EnquiryForm } from "./EnquiryForm";
 export function EnquirySection() {
   const { enquirySection, businessName, contact } = siteConfig;
   const sectionRef = useRef<HTMLDivElement>(null);
+  const convex = useConvex();
+  const connected = !!convexUrl && !!siteId && !!convex;
+
+  const handleSubmit = useCallback(
+    async (values: { name: string; email: string; phone: string; enquiryType: string; message: string }) => {
+      try {
+        await convex.mutation(submitInquiry, { siteId, ...values });
+      } catch {
+        // Never report a success the backend did not confirm.
+        throw new Error(enquirySection.disconnectedMessage);
+      }
+    },
+    [convex, enquirySection.disconnectedMessage],
+  );
 
   useEffect(() => {
     const element = sectionRef.current;
@@ -24,17 +46,22 @@ export function EnquirySection() {
   }, []);
 
   return (
-    <section id={enquirySection.id} ref={sectionRef} className="enquiry-section">
+    <section
+      id={enquirySection.id}
+      ref={sectionRef}
+      className="enquiry-section"
+      aria-labelledby={`${enquirySection.id}-heading`}
+    >
       <div className="enquiry-grid">
         <div className="enquiry-intro">
           <p className="eyebrow">{enquirySection.eyebrow}</p>
-          <h2>{enquirySection.heading}</h2>
+          <h2 id={`${enquirySection.id}-heading`}>{enquirySection.heading}</h2>
           <p className="muted">{enquirySection.body}</p>
           {contact.address && <p className="muted">{contact.address}</p>}
           {contact.hours && <p className="muted">{contact.hours}</p>}
         </div>
         <div className="enquiry-form">
-          <EnquiryForm />
+          <EnquiryForm onSubmit={connected ? handleSubmit : undefined} />
         </div>
       </div>
       <footer className="site-footer">

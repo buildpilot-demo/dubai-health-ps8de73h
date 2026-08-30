@@ -76,7 +76,12 @@ a {
   inset-block-start: 0;
   inset-inline: 0;
   z-index: 20;
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--color-background) 55%, transparent), transparent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-background) 94%, transparent),
+    color-mix(in srgb, var(--color-background) 55%, transparent) 60%,
+    transparent
+  );
 }
 
 .site-header__bar {
@@ -179,8 +184,22 @@ h1 {
 }
 
 .muted {
-  color: var(--color-muted);
-  line-height: 1.6;
+  /* Config's muted tone, darkened toward the text color so body copy keeps
+     WCAG AA contrast on both the page background and the surface. */
+  color: color-mix(in srgb, var(--color-muted) 70%, var(--color-text));
+  line-height: 1.65;
+}
+
+h2 {
+  margin: 0 0 var(--space-4);
+  font-size: 1.9rem;
+  line-height: 1.2;
+}
+
+h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 1.15rem;
+  line-height: 1.3;
 }
 
 /* --- Buttons --------------------------------------------------------- */
@@ -322,29 +341,61 @@ h1 {
   display: block;
 }
 
+/* Soft vignette so the chapter copy always reads against the photography. */
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, color-mix(in srgb, var(--color-background) 70%, transparent), transparent 55%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-background) 45%, transparent), transparent 40%);
+}
+
 .hero-chapter {
   position: absolute;
   inset-inline: 0;
-  bottom: 12%;
-  max-width: 640px;
-  padding-inline: var(--space-6);
-  transition: opacity 400ms ease;
+  bottom: 10%;
+  display: flex;
+  padding-inline: clamp(var(--space-6), 6vw, 4rem);
+  transition: opacity 500ms ease;
   color: var(--color-text);
 }
 
 .hero-chapter[data-align="left"] {
-  margin-inline-end: auto;
+  justify-content: flex-start;
 }
 
 .hero-chapter[data-align="right"] {
-  margin-inline-start: auto;
-  text-align: right;
+  justify-content: flex-end;
+}
+
+.hero-chapter__panel {
+  max-width: 34rem;
+  padding: var(--space-8);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 45px color-mix(in srgb, var(--color-text) 18%, transparent);
+}
+
+.hero-chapter__actions {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.hero-chapter__actions .btn {
+  margin-right: 0;
 }
 
 .hero-scroll-cue {
-  margin-top: var(--space-4);
+  margin: var(--space-6) 0 0;
   font-size: 0.8rem;
-  color: var(--color-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-muted) 70%, var(--color-text));
 }
 
 .hero-static {
@@ -356,6 +407,15 @@ h1 {
   height: 60vh;
   object-fit: cover;
   display: block;
+}
+
+.hero-static .hero-chapter__panel {
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
+  box-shadow: none;
 }
 
 .hero-static__chapters {
@@ -389,38 +449,60 @@ h1 {
 
 .products-rail {
   display: flex;
+  align-items: center;
   gap: var(--space-8);
   will-change: transform;
-  padding-inline: var(--space-6);
+  padding-inline: clamp(var(--space-6), 6vw, 4rem);
+}
+
+.products-rail__items,
+.products-list__items {
+  display: flex;
+  gap: var(--space-8);
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .products-panel {
   flex: 0 0 auto;
-  width: min(60vw, 480px);
+  width: min(70vw, 340px);
 }
 
 .products-panel--intro {
-  width: min(50vw, 400px);
+  width: min(80vw, 420px);
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-.products-panel img {
+/* Every product/service photo is a uniform square card, whatever its
+   native dimensions (ratio comes from productsSection.imageAspectRatio). */
+.product-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card__media {
   width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
+  overflow: hidden;
   border-radius: var(--radius-lg);
   margin-bottom: var(--space-4);
+  background: color-mix(in srgb, var(--color-text) 8%, var(--color-surface));
+  border: 1px solid var(--color-border);
+}
+
+.product-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 @media (max-width: 768px) {
-  .products-panel {
-    width: 85vw;
-  }
-
+  .products-panel,
   .products-panel--intro {
-    width: 85vw;
+    width: 80vw;
   }
 }
 
@@ -428,13 +510,20 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
-  padding: var(--space-8) var(--space-6);
+  padding: var(--space-12) var(--space-6);
   max-width: var(--container-width);
   margin-inline: auto;
 }
 
-.products-list .products-panel {
+.products-list__items {
+  flex-wrap: wrap;
+  flex-direction: column;
+}
+
+.products-list .products-panel,
+.products-list .products-panel--intro {
   width: 100%;
+  max-width: 420px;
 }
 
 /* --- Plain variant (no matching asset collection): text-only hero + highlights */
@@ -477,6 +566,9 @@ h1 {
 
 .enquiry-section {
   padding-block-start: var(--space-12);
+  background: var(--color-background);
+  position: relative;
+  z-index: 1;
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 500ms ease, transform 500ms ease;
@@ -513,6 +605,11 @@ h1 {
   .enquiry-section {
     opacity: 1;
     transform: none;
+    transition: none;
+  }
+
+  .hero-chapter {
+    opacity: 1 !important;
     transition: none;
   }
 }
